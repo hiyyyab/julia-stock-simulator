@@ -1,7 +1,7 @@
 using Statistics
 using Base.Threads
 using Plots
-using Printf
+using Printf 
 using Random
 
 abstract type EuropeanOption end
@@ -10,6 +10,7 @@ abstract type EuropeanOption end
 struct CallOption <: EuropeanOption
     strike::Float64
 end
+
 # define put option - when the right time to SELL is @ specific price
 struct PutOption <: EuropeanOption
     strike::Float64
@@ -29,7 +30,6 @@ function run_monte_carlo(option::EuropeanOption, S0, r, σ, T, dt, N)
     num_steps = Int(round(T / dt))
 
     # @threads distributes X amount of simulations across CPU cores
-    # (mention this during demo)
     @threads for i in 1:N
         rng = Random.default_rng() 
         S = S0
@@ -46,30 +46,44 @@ function run_monte_carlo(option::EuropeanOption, S0, r, σ, T, dt, N)
 end
 
 function main()
-    S0 = 100.0      # initial stock price
-    K = 100.0       # strike price - "target" price in the option contract
-    r = 0.05        # risk-free rate (Drift) - % we assume the stock should grow annually
-    σ = 0.2         # volatility how much the stock swings
-    T = 1.0         # (1 year) length of simulation
-    dt = 1/252      # roughly 252 trading days/year... 1/252 == calc new price for every single day of that year
-    N = 100000      # num of simulations - how many different stock price paths to simulate - takes avg of all payoffs to find fair price of option
+    println("Option Pricing Input")
+
+    print("Initial stock price: ")
+    S0 = parse(Float64, readline()) # curr price
+
+    print("Strike price (K): ")
+    K = parse(Float64, readline()) # "target" price in the option contract
+
+    print("Risk-free rate (r) [e.g. 0.05]: ")
+    r = parse(Float64, readline()) # % we assume the stock should grow annually
+
+    print("Volatility (σ) [e.g. 0.2]: ")
+    σ = parse(Float64, readline()) # how much the stock swings
+
+    print("Years to expiry (T): ")
+    T = parse(Float64, readline()) # length of simulation
+
+    print("Number of simulations (N): ")
+    N = parse(Int, readline()) # how many different stock price paths to simulate
     
-    println("Using $(nthreads()) CPU threads...")
+    dt = 1/252 # roughly 252 trading days/year
     
-    call_opt = CallOption(K)    # when to BUY (stock goes up)
-    @printf("\nSimulating Call Option...")
+    println("\nUsing $(nthreads()) CPU threads...")
+    
+    call_opt = CallOption(K) # when to BUY (stock goes up)
+    println("Simulating Call Option...")
     @time call_price, call_data = run_monte_carlo(call_opt, S0, r, σ, T, dt, N)
     
-    put_opt = PutOption(K)     # when to SELL (stock goes down)
-    @printf("Simulating Put Option...")
+    put_opt = PutOption(K) # when to SELL (stock goes down)
+    println("Simulating Put Option...")
     @time put_price, put_data = run_monte_carlo(put_opt, S0, r, σ, T, dt, N)
 
     println("\n" * "="^30)
-    @printf("Call Price: \$%.4f\n", call_price)
+    @printf("Call Price: \$%.4f\n", call_price) # fair price based on avg of all payoffs
     @printf("Put Price:  \$%.4f\n", put_price)
     println("="^30)
 
-    println("\nGenerating Graph")
+    println("\nGenerating Graph...")
     running_avg = cumsum(call_data) ./ (1:N) .* exp(-r * T)
     
     p = plot(running_avg[1:min(N, 20000)], 
@@ -79,7 +93,7 @@ function main()
     hline!([call_price], label="Final Price", linestyle=:dash, color=:red)
     
     savefig(p, "convergence_plot.png")
-    println("Graph is saved")
+    println("Graph is saved as 'convergence_plot.png'")
 end
 
 main()
