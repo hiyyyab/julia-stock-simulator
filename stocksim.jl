@@ -1,6 +1,7 @@
 using Statistics
 using Base.Threads
 using Plots
+gr()
 using Printf 
 using Random
 
@@ -92,6 +93,7 @@ function main()
              lw=2, label="Running Average")
     hline!([call_price], label="Final Price", linestyle=:dash, color=:red)
     
+    display(p)
     savefig(p, "convergence_plot.png")
     println("Graph is saved as 'convergence_plot.png'")
 end
